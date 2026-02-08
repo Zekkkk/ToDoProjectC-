@@ -71,6 +71,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 // WHY REPO/DTO: Controllers depend on repository interfaces and DTOs for clean separation.
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<ISubTaskRepository, SubTaskRepository>();
+builder.Services.AddScoped<ITimeLogRepository, TimeLogRepository>();
 
 
 // USER NEED: Secure API with JWT
