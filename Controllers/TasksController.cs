@@ -49,7 +49,7 @@ namespace ToDo.Api.Controllers
                 UserId = userId,
                 Title = request.Title.Trim(),
                 Description = request.Description?.Trim(),
-                DueDateUtc = request.DueDateUtc,
+                DueDateUtc = NormalizeDueDate(request.DueDateUtc),
                 Priority = request.Priority,
                 Status = request.Status,
                 CreatedAtUtc = DateTime.UtcNow
@@ -126,7 +126,7 @@ namespace ToDo.Api.Controllers
 
             taskItem.Title = request.Title.Trim();
             taskItem.Description = request.Description?.Trim();
-            taskItem.DueDateUtc = request.DueDateUtc;
+            taskItem.DueDateUtc = NormalizeDueDate(request.DueDateUtc);
             taskItem.Priority = request.Priority;
             taskItem.Status = request.Status;
 
@@ -320,6 +320,17 @@ namespace ToDo.Api.Controllers
                 IsCompleted = subTaskItem.IsCompleted,
                 TaskItemId = subTaskItem.TaskItemId
             };
+        }
+
+        private static DateTime? NormalizeDueDate(DateTime? dueDateUtc)
+        {
+            if (!dueDateUtc.HasValue)
+            {
+                return null;
+            }
+
+            var date = dueDateUtc.Value.Date;
+            return DateTime.SpecifyKind(date, DateTimeKind.Utc);
         }
 
         private bool TryGetUserId(out int userId)

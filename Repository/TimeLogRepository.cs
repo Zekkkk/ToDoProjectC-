@@ -50,5 +50,11 @@ namespace ToDo.Api.Repository
             _db.TimeLogs.Update(timeLog);
             await _db.SaveChangesAsync();
         }
+
+        public async Task DeleteAsync(TimeLog timeLog)
+        {
+            _db.TimeLogs.Remove(timeLog);
+            await _db.SaveChangesAsync();
+        }
     }
 }

@@ -48,6 +48,18 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// USER NEED: Allow the React dev server to call the API during development.
+// DEV: Enable CORS for http://localhost:5173.
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DevCors", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 
 // USER NEED: Store data in PostgreSQL
 // DEV: Register EF Core DbContext with connection string
@@ -155,6 +167,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("DevCors");
 
 // IMPORTANT: Authentication MUST come before Authorization
 app.UseAuthentication();

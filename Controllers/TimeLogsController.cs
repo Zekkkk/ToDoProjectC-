@@ -110,6 +110,30 @@ namespace ToDo.Api.Controllers
             return Ok(MapTimeLog(runningLog));
         }
 
+        [HttpDelete("{timeLogId:int}")]
+        public async Task<IActionResult> DeleteTimeLog(int taskId, int timeLogId)
+        {
+            if (!TryGetUserId(out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var taskExists = await _taskRepository.ExistsAsync(taskId, userId);
+            if (!taskExists)
+            {
+                return NotFound();
+            }
+
+            var timeLog = await _timeLogRepository.GetByIdAsync(timeLogId);
+            if (timeLog == null || timeLog.TaskItemId != taskId)
+            {
+                return NotFound();
+            }
+
+            await _timeLogRepository.DeleteAsync(timeLog);
+            return NoContent();
+        }
+
         private static TimeLogResponseDto MapTimeLog(TimeLog timeLog)
         {
             int? durationMinutes = null;

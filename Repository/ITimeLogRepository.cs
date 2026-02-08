@@ -14,5 +14,6 @@ namespace ToDo.Api.Repository
         Task<TimeLog?> GetRunningByTaskIdAsync(int taskItemId);
         Task<TimeLog> AddAsync(TimeLog timeLog);
         Task UpdateAsync(TimeLog timeLog);
+        Task DeleteAsync(TimeLog timeLog);
     }
 }

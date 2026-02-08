@@ -14,5 +14,5 @@ public class JwtSettings
     public string Audience { get; set; } = string.Empty;
 
     // Token lifetime in minutes
-    public int ExpiryMinutes { get; set; }
+    public int ExpiresMinutes { get; set; }
 }
