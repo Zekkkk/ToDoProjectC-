@@ -1,10 +1,13 @@
 using System.ComponentModel.DataAnnotations;
+using ToDo.Api.Domain.Enums;
+using TaskStatusEnum = ToDo.Api.Domain.Enums.TaskStatus;
 
 namespace ToDo.Api.Domain.Entities
 {
     /// <summary>
-    /// USER NEED: Create tasks with deadlines, completion, subtasks, and time tracking.
-    /// DEV: TaskItem has relationships to User, SubTasks, and TimeLogs.
+    /// USER NEED: Create tasks with title, status, priority, deadlines, and subtasks.
+    /// DEV: TaskItem uses enums for status/priority and relates to SubTaskItem and TimeLog.
+    /// WHY REPO/DTO: Repositories isolate persistence, and DTOs validate/shape API input/output.
     /// </summary>
     public class TaskItem
     {
@@ -13,7 +16,7 @@ namespace ToDo.Api.Domain.Entities
         // USER NEED: Task must have a title.
         // DEV: Required + length limit.
         [Required]
-        [MaxLength(120)]
+        [MaxLength(100)]
         public string Title { get; set; } = string.Empty;
 
         // USER NEED: Optional task details.
@@ -22,21 +25,24 @@ namespace ToDo.Api.Domain.Entities
         public string? Description { get; set; }
 
         // USER NEED: Deadlines.
-        // DEV: Stored in UTC for consistent comparisons (Overdue logic later).
+        // DEV: Stored in UTC for consistent comparisons.
         public DateTime? DueDateUtc { get; set; }
 
-        // USER NEED: Mark completed tasks.
-        public bool IsCompleted { get; set; }
+        // USER NEED: Priority (Low/Medium/High).
+        public TaskPriority Priority { get; set; }
 
-        // USER NEED: Track when it was completed (useful for reports).
-        public DateTime? CompletedAtUtc { get; set; }
+        // USER NEED: Status (Todo/InProgress/Done).
+        public TaskStatusEnum Status { get; set; }
+
+        // USER NEED: Track when the task was created.
+        public DateTime CreatedAtUtc { get; set; }
 
         // ---- Relationship: User (1) -> (many) TaskItems ----
-        public int UserId { get; set; }
+        public int? UserId { get; set; }
         public User? User { get; set; }
 
-        // ---- Relationship: TaskItem (1) -> (many) SubTasks ----
-        public List<SubTask> SubTasks { get; set; } = new();
+        // ---- Relationship: TaskItem (1) -> (many) SubTaskItems ----
+        public List<SubTaskItem> SubTasks { get; set; } = new();
 
         // ---- Relationship: TaskItem (1) -> (many) TimeLogs ----
         public List<TimeLog> TimeLogs { get; set; } = new();

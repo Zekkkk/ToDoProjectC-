@@ -5,6 +5,7 @@ using System.Text;
 using ToDo.Api.Services.Interfaces;
 using ToDo.Api.Services;
 using ToDo.Api.Infrastructure.Data;
+using ToDo.Api.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +30,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // DEV: Register services for DI
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+// USER NEED: CRUD tasks and subtasks without controllers touching DbContext.
+// DEV: Register repositories for DI.
+// WHY REPO/DTO: Controllers depend on repository interfaces and DTOs for clean separation.
+builder.Services.AddScoped<ITaskRepository, TaskRepository>();
+builder.Services.AddScoped<ISubTaskRepository, SubTaskRepository>();
 
 
 // USER NEED: Secure API with JWT

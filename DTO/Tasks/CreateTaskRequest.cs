@@ -1,21 +1,27 @@
+using System.ComponentModel.DataAnnotations;
 using ToDo.Api.Domain.Enums;
 using TaskStatusEnum = ToDo.Api.Domain.Enums.TaskStatus;
 
 namespace ToDo.Api.DTO.Tasks
 {
     /// <summary>
-    /// USER NEED: Read task details including status and priority.
-    /// DEV: Response DTO mirrors the fields returned to clients.
-    /// WHY REPO/DTO: DTOs keep API contracts stable while repositories isolate EF Core.
+    /// USER NEED: Provide data to create a task.
+    /// DEV: DTO captures allowed fields and basic validation attributes.
+    /// WHY REPO/DTO: DTOs prevent over-posting while repositories handle DbContext access.
     /// </summary>
-    public class TaskResponseDto
+    public class CreateTaskRequest
     {
-        public int Id { get; set; }
+        [Required]
+        [MaxLength(100)]
         public string Title { get; set; } = string.Empty;
+
+        [MaxLength(2000)]
         public string? Description { get; set; }
-        public DateTime CreatedAtUtc { get; set; }
+
         public DateTime? DueDateUtc { get; set; }
+
         public TaskPriority Priority { get; set; }
+
         public TaskStatusEnum Status { get; set; }
     }
 }

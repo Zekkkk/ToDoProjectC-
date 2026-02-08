@@ -4,8 +4,9 @@ using ToDo.Api.Domain.Entities;
 namespace ToDo.Api.Infrastructure.Data
 {
     /// <summary>
-    /// USER NEED: Persist tasks/users to a real database.
-    /// DEV: EF Core DbContext maps our Domain entities to PostgreSQL tables.
+    /// USER NEED: Persist tasks, subtasks, and users in PostgreSQL.
+    /// DEV: EF Core DbContext maps domain entities and configures relationships/cascade rules.
+    /// WHY REPO/DTO: Repositories isolate DbContext access, and DTOs define stable API contracts.
     /// </summary>
     public class AppDbContext : DbContext
     {
@@ -15,7 +16,7 @@ namespace ToDo.Api.Infrastructure.Data
         // Each DbSet becomes a table in PostgreSQL.
         public DbSet<User> Users => Set<User>();
         public DbSet<TaskItem> TaskItems => Set<TaskItem>();
-        public DbSet<SubTask> SubTasks => Set<SubTask>();
+        public DbSet<SubTaskItem> SubTasks => Set<SubTaskItem>();
         public DbSet<TimeLog> TimeLogs => Set<TimeLog>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -28,22 +29,25 @@ namespace ToDo.Api.Infrastructure.Data
                 .HasIndex(u => u.Username)
                 .IsUnique();
 
-            // USER NEED: One user has many tasks.
-            // DEV: Configure FK and cascade delete tasks when user is deleted.
+            // USER NEED: Tasks can exist without auth for now.
+            // DEV: Configure nullable FK so CRUD works before JWT is added.
             modelBuilder.Entity<TaskItem>()
                 .HasOne(t => t.User)
                 .WithMany(u => u.Tasks)
                 .HasForeignKey(t => t.UserId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // USER NEED: One task has many subtasks.
-            modelBuilder.Entity<SubTask>()
+            // DEV: Configure FK and cascade delete.
+            modelBuilder.Entity<SubTaskItem>()
                 .HasOne(st => st.TaskItem)
                 .WithMany(t => t.SubTasks)
                 .HasForeignKey(st => st.TaskItemId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // USER NEED: One task has many time logs.
+            // DEV: Configure FK and cascade delete.
             modelBuilder.Entity<TimeLog>()
                 .HasOne(tl => tl.TaskItem)
                 .WithMany(t => t.TimeLogs)
