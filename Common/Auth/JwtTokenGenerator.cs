@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using ToDo.Api.Domain.Entities;
 
@@ -12,9 +13,9 @@ public class JwtTokenGenerator
 {
     private readonly JwtSettings _settings;
 
-    public JwtTokenGenerator(JwtSettings settings)
+    public JwtTokenGenerator(IOptions<JwtSettings> options)
     {
-        _settings = settings;
+        _settings = options.Value;
     }
 
     public string GenerateToken(User user)
@@ -28,7 +29,7 @@ public class JwtTokenGenerator
 
         // Convert secret to bytes
         var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_settings.SecretKey));
+            Encoding.UTF8.GetBytes(_settings.Key));
 
         // Create signature
         var creds = new SigningCredentials(

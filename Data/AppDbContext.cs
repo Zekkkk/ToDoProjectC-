@@ -29,13 +29,13 @@ namespace ToDo.Api.Infrastructure.Data
                 .HasIndex(u => u.Username)
                 .IsUnique();
 
-            // USER NEED: Tasks can exist without auth for now.
-            // DEV: Configure nullable FK so CRUD works before JWT is added.
+            // USER NEED: Tasks belong to a user once auth is enabled.
+            // DEV: Configure required FK to enforce ownership.
             modelBuilder.Entity<TaskItem>()
                 .HasOne(t => t.User)
                 .WithMany(u => u.Tasks)
                 .HasForeignKey(t => t.UserId)
-                .IsRequired(false)
+                .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
 
             // USER NEED: One task has many subtasks.

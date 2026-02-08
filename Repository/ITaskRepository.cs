@@ -11,9 +11,9 @@ namespace ToDo.Api.Repository
     /// </summary>
     public interface ITaskRepository
     {
-        Task<TaskItem?> GetByIdAsync(int id);
-        Task<bool> ExistsAsync(int id);
-        Task<List<TaskItem>> GetTasksAsync(TaskStatusEnum? status, TaskPriority? priority, string? query, string? sort);
+        Task<TaskItem?> GetByIdAsync(int id, int userId);
+        Task<bool> ExistsAsync(int id, int userId);
+        Task<List<TaskItem>> GetTasksAsync(int userId, TaskStatusEnum? status, TaskPriority? priority, string? query, string? sort);
         Task<TaskItem> AddAsync(TaskItem taskItem);
         Task UpdateAsync(TaskItem taskItem);
         Task DeleteAsync(TaskItem taskItem);

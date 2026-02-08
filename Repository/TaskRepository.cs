@@ -20,19 +20,20 @@ namespace ToDo.Api.Repository
             _db = db;
         }
 
-        public async Task<TaskItem?> GetByIdAsync(int id)
+        public async Task<TaskItem?> GetByIdAsync(int id, int userId)
         {
-            return await _db.TaskItems.FirstOrDefaultAsync(t => t.Id == id);
+            return await _db.TaskItems.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
         }
 
-        public async Task<bool> ExistsAsync(int id)
+        public async Task<bool> ExistsAsync(int id, int userId)
         {
-            return await _db.TaskItems.AnyAsync(t => t.Id == id);
+            return await _db.TaskItems.AnyAsync(t => t.Id == id && t.UserId == userId);
         }
 
-        public async Task<List<TaskItem>> GetTasksAsync(TaskStatusEnum? status, TaskPriority? priority, string? query, string? sort)
+        public async Task<List<TaskItem>> GetTasksAsync(int userId, TaskStatusEnum? status, TaskPriority? priority, string? query, string? sort)
         {
-            IQueryable<TaskItem> taskQuery = _db.TaskItems.AsNoTracking();
+            IQueryable<TaskItem> taskQuery = _db.TaskItems.AsNoTracking()
+                .Where(t => t.UserId == userId);
 
             if (status.HasValue)
             {

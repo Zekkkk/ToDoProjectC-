@@ -38,7 +38,7 @@ namespace ToDo.Api.Domain.Entities
         public DateTime CreatedAtUtc { get; set; }
 
         // ---- Relationship: User (1) -> (many) TaskItems ----
-        public int? UserId { get; set; }
+        public int UserId { get; set; }
         public User? User { get; set; }
 
         // ---- Relationship: TaskItem (1) -> (many) SubTaskItems ----

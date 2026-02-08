@@ -4,8 +4,8 @@ namespace ToDo.Api.Common.Auth;
 // DEV: Store JWT configuration in one place
 public class JwtSettings
 {
-    // Secret key used to sign tokens
-    public string SecretKey { get; set; } = string.Empty;
+    // Key used to sign tokens (matches Jwt:Key in appsettings.json)
+    public string Key { get; set; } = string.Empty;
 
     // Who created the token
     public string Issuer { get; set; } = string.Empty;

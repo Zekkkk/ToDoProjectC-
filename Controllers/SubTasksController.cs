@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using ToDo.Api.DTO.SubTasks;
 using ToDo.Api.Repository;
 
@@ -10,19 +12,27 @@ namespace ToDo.Api.Controllers
     /// WHY REPO/DTO: DTOs define inputs, repositories isolate DbContext access.
     /// </summary>
     [ApiController]
+    [Authorize]
     [Route("api/subtasks")]
     public class SubTasksController : ControllerBase
     {
         private readonly ISubTaskRepository _subTaskRepository;
+        private readonly ITaskRepository _taskRepository;
 
-        public SubTasksController(ISubTaskRepository subTaskRepository)
+        public SubTasksController(ISubTaskRepository subTaskRepository, ITaskRepository taskRepository)
         {
             _subTaskRepository = subTaskRepository;
+            _taskRepository = taskRepository;
         }
 
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateSubTask(int id, [FromBody] UpdateSubTaskRequest request)
         {
+            if (!TryGetUserId(out var userId))
+            {
+                return Unauthorized();
+            }
+
             var validationError = ValidateSubTaskRequest(request.Title);
             if (validationError != null)
             {
@@ -31,6 +41,12 @@ namespace ToDo.Api.Controllers
 
             var subTaskItem = await _subTaskRepository.GetByIdAsync(id);
             if (subTaskItem == null)
+            {
+                return NotFound();
+            }
+
+            var taskExists = await _taskRepository.ExistsAsync(subTaskItem.TaskItemId, userId);
+            if (!taskExists)
             {
                 return NotFound();
             }
@@ -52,8 +68,19 @@ namespace ToDo.Api.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteSubTask(int id)
         {
+            if (!TryGetUserId(out var userId))
+            {
+                return Unauthorized();
+            }
+
             var subTaskItem = await _subTaskRepository.GetByIdAsync(id);
             if (subTaskItem == null)
+            {
+                return NotFound();
+            }
+
+            var taskExists = await _taskRepository.ExistsAsync(subTaskItem.TaskItemId, userId);
+            if (!taskExists)
             {
                 return NotFound();
             }
@@ -76,6 +103,13 @@ namespace ToDo.Api.Controllers
             }
 
             return null;
+        }
+
+        private bool TryGetUserId(out int userId)
+        {
+            userId = 0;
+            var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(claimValue, out userId);
         }
     }
 }

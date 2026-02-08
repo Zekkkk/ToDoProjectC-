@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using ToDo.Api.Domain.Entities;
 using ToDo.Api.Domain.Enums;
 using TaskStatusEnum = ToDo.Api.Domain.Enums.TaskStatus;
@@ -14,6 +16,7 @@ namespace ToDo.Api.Controllers
     /// WHY REPO/DTO: DTOs define request/response shapes while repositories hide DbContext usage.
     /// </summary>
     [ApiController]
+    [Authorize]
     [Route("api/tasks")]
     public class TasksController : ControllerBase
     {
@@ -30,6 +33,11 @@ namespace ToDo.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest request)
         {
+            if (!TryGetUserId(out var userId))
+            {
+                return Unauthorized();
+            }
+
             var validationError = ValidateTaskRequest(request.Title, request.DueDateUtc);
             if (validationError != null)
             {
@@ -38,6 +46,7 @@ namespace ToDo.Api.Controllers
 
             var taskItem = new TaskItem
             {
+                UserId = userId,
                 Title = request.Title.Trim(),
                 Description = request.Description?.Trim(),
                 DueDateUtc = request.DueDateUtc,
@@ -53,6 +62,11 @@ namespace ToDo.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetTasks([FromQuery] string? status, [FromQuery] string? priority, [FromQuery] string? q, [FromQuery] string? sort)
         {
+            if (!TryGetUserId(out var userId))
+            {
+                return Unauthorized();
+            }
+
             if (!TryParseStatus(status, out var statusValue, out var statusError))
             {
                 return BadRequest(statusError);
@@ -68,7 +82,7 @@ namespace ToDo.Api.Controllers
                 return BadRequest(sortError);
             }
 
-            var tasks = await _taskRepository.GetTasksAsync(statusValue, priorityValue, q?.Trim(), sort);
+            var tasks = await _taskRepository.GetTasksAsync(userId, statusValue, priorityValue, q?.Trim(), sort);
             var response = tasks.Select(MapTask).ToList();
             return Ok(response);
         }
@@ -76,7 +90,12 @@ namespace ToDo.Api.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetTaskById(int id)
         {
-            var taskItem = await _taskRepository.GetByIdAsync(id);
+            if (!TryGetUserId(out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var taskItem = await _taskRepository.GetByIdAsync(id, userId);
             if (taskItem == null)
             {
                 return NotFound();
@@ -88,13 +107,18 @@ namespace ToDo.Api.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateTask(int id, [FromBody] UpdateTaskRequest request)
         {
+            if (!TryGetUserId(out var userId))
+            {
+                return Unauthorized();
+            }
+
             var validationError = ValidateTaskRequest(request.Title, request.DueDateUtc);
             if (validationError != null)
             {
                 return BadRequest(validationError);
             }
 
-            var taskItem = await _taskRepository.GetByIdAsync(id);
+            var taskItem = await _taskRepository.GetByIdAsync(id, userId);
             if (taskItem == null)
             {
                 return NotFound();
@@ -113,7 +137,12 @@ namespace ToDo.Api.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteTask(int id)
         {
-            var taskItem = await _taskRepository.GetByIdAsync(id);
+            if (!TryGetUserId(out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var taskItem = await _taskRepository.GetByIdAsync(id, userId);
             if (taskItem == null)
             {
                 return NotFound();
@@ -126,13 +155,18 @@ namespace ToDo.Api.Controllers
         [HttpPost("{taskId:int}/subtasks")]
         public async Task<IActionResult> CreateSubTask(int taskId, [FromBody] CreateSubTaskRequest request)
         {
+            if (!TryGetUserId(out var userId))
+            {
+                return Unauthorized();
+            }
+
             var validationError = ValidateSubTaskRequest(request.Title);
             if (validationError != null)
             {
                 return BadRequest(validationError);
             }
 
-            var taskExists = await _taskRepository.ExistsAsync(taskId);
+            var taskExists = await _taskRepository.ExistsAsync(taskId, userId);
             if (!taskExists)
             {
                 return NotFound();
@@ -152,7 +186,12 @@ namespace ToDo.Api.Controllers
         [HttpGet("{taskId:int}/subtasks")]
         public async Task<IActionResult> GetSubTasksForTask(int taskId)
         {
-            var taskExists = await _taskRepository.ExistsAsync(taskId);
+            if (!TryGetUserId(out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var taskExists = await _taskRepository.ExistsAsync(taskId, userId);
             if (!taskExists)
             {
                 return NotFound();
@@ -281,6 +320,13 @@ namespace ToDo.Api.Controllers
                 IsCompleted = subTaskItem.IsCompleted,
                 TaskItemId = subTaskItem.TaskItemId
             };
+        }
+
+        private bool TryGetUserId(out int userId)
+        {
+            userId = 0;
+            var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(claimValue, out userId);
         }
     }
 }

@@ -1,9 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Security.Cryptography;
-using System.Text;
+using ToDo.Api.Common.Auth;
 using ToDo.Api.DTO.Auth;
 using ToDo.Api.Infrastructure.Data;
 using ToDo.Api.Services.Interfaces;
@@ -11,15 +8,20 @@ using ToDo.Api.Domain.Entities;
 
 namespace ToDo.Api.Services;
 
+/// <summary>
+/// USER NEED: Register and login to get a JWT token for protected endpoints.
+/// DEV: Service validates users and delegates token creation to JwtTokenGenerator.
+/// WHY REPO/DTO: DTOs define inputs, while repositories are used for task/subtask CRUD.
+/// </summary>
 public class AuthService : IAuthService
 {
     private readonly AppDbContext _db;
-    private readonly IConfiguration _config;
+    private readonly JwtTokenGenerator _tokenGenerator;
 
-    public AuthService(AppDbContext db, IConfiguration config)
+    public AuthService(AppDbContext db, JwtTokenGenerator tokenGenerator)
     {
         _db = db;
-        _config = config;
+        _tokenGenerator = tokenGenerator;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto dto)
@@ -28,7 +30,7 @@ public class AuthService : IAuthService
 
         var exists = await _db.Users.AnyAsync(u => u.Username.ToLower() == username);
         if (exists)
-            throw new Exception("Username already exists.");
+            throw new InvalidOperationException("Username already exists.");
 
         var user = new User
         {
@@ -39,7 +41,7 @@ public class AuthService : IAuthService
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
 
-        return new AuthResponseDto { Token = CreateToken(user) };
+        return new AuthResponseDto { Token = _tokenGenerator.GenerateToken(user) };
     }
 
     public async Task<AuthResponseDto> LoginAsync(LoginRequestDto dto)
@@ -48,12 +50,12 @@ public class AuthService : IAuthService
 
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == username);
         if (user == null)
-            throw new Exception("Invalid username or password.");
+            throw new UnauthorizedAccessException("Invalid username or password.");
 
         if (!VerifyPassword(dto.Password, user.PasswordHash))
-            throw new Exception("Invalid username or password.");
+            throw new UnauthorizedAccessException("Invalid username or password.");
 
-        return new AuthResponseDto { Token = CreateToken(user) };
+        return new AuthResponseDto { Token = _tokenGenerator.GenerateToken(user) };
     }
 
     
@@ -96,30 +98,4 @@ public class AuthService : IAuthService
         return CryptographicOperations.FixedTimeEquals(hash, storedHash);
     }
 
-    
-    // JWT token creation
-    
-    private string CreateToken(User user)
-    {
-        var key = _config["Jwt:Key"];
-        if (string.IsNullOrWhiteSpace(key))
-            throw new Exception("Jwt:Key missing in appsettings.json");
-
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Name, user.Username),
-        };
-
-        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
-        var creds = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
-
-        var token = new JwtSecurityToken(
-            claims: claims,
-            expires: DateTime.UtcNow.AddDays(7),
-            signingCredentials: creds
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
 }
