@@ -18,6 +18,7 @@ Note: The React frontend is included only for **presentation/demo purposes**.
 - Time logs (start/stop/list/delete)
 - User registration + login (JWT)
 
+
 ## How to Run the API
 
 From the API folder:
